@@ -10,3 +10,18 @@ This is a work in progress, but the intended usage is:
 
     pandoc -t json input.md | runghc ditaa.hs <output_directory> <outfile_prefix> [format] | pandoc -f json ...
 
+And this is an annotated code block:
+
+~~~~~ {.ditaa .no-separation file="image-1.png"}
+
++--------+   +-------+    +-------+
+|        | --+ ditaa +--> |       |
+|  Text  |   +-------+    |diagram|
+|Document|   |!magic!|    |       |
+|     {d}|   |       |    |       |
++---+----+   +-------+    +-------+
+    :                         ^
+    |       Lots of work      |
+    +-------------------------+
+
+~~~~~
