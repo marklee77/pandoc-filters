@@ -1,3 +1,18 @@
+-- ditaa.hs, a pandoc json filter to create inline diagrams with ditaa
+-- Copyright (C) 2013 Mark Lee Stillwell
+--
+-- This program is free software: you can redistribute it and/or modify it under
+-- the terms of the GNU General Public License as published by the Free Software
+-- Foundation, either version 3 of the License, or any later version.
+--
+-- This program is distributed in the hope that it will be useful, but WITHOUT 
+-- ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+-- FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+-- details.
+--
+-- You should have received a copy of the GNU General Public License along with
+-- this program. If not, see <http://www.gnu.org/licenses/>.
+--
 -- ditaa-json.hs
 -- need to
 --    0 parse arguments (optional output dir) (optional format)
@@ -16,9 +31,9 @@ doDitaa :: Block -> IO Block
 doDitaa cb@(CodeBlock (id, classes, namevals) contents) =
     if elem "ditaa" classes
 -- text, url, title
-        then withPreloadedFile contents $ \path -> 
-          system ("/usr/bin/ditaa " ++ path ++ " >/dev/null") >>
-          return (Para [Image [] ("image-1.png", "")])
+        then withPreloadedFile contents $ \infile -> 
+          system ("/usr/bin/ditaa " ++ infile ++ " " ++ outfile ++ " >/dev/null") >>
+          return (Para [Image [] (outfile, "")])
         else return cb
 doDitaa x = return x
 
