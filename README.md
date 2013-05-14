@@ -25,3 +25,19 @@ And this is an annotated code block:
     +-------------------------+
 
 ~~~~~
+
+Second code block:
+
+~~~~~ {.ditaa .no-separation file="image-1.png"}
+
++--------+   +-------+    +-------+
+|        | --+ ditaa +--> |       |
+|  Text  |   +-------+    |diagram|
+|Document|   |!magic!|    |       |
+|     {d}|   |       |    |       |
++---+----+   +-------+    +-------+
+    :                         ^
+    |       Lots of work      |
+    +-------------------------+
+
+~~~~~

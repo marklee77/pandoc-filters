@@ -21,25 +21,37 @@
 --    3 create output dir if needed
 --    4 figure output file name...first available ditaafig-N.(fmt)
 --    5 invoke ditaa
-import Text.Pandoc
 
+import Data.IORef
 import System.IO
 import System.IO.Temp(withSystemTempFile)
 import System.Process
+import Text.Pandoc
 
-doDitaa :: Block -> IO Block
-doDitaa cb@(CodeBlock (id, classes, namevals) contents) =
+type Counter = Int -> IO Int
+
+makeCounter :: IO Counter
+makeCounter = do
+  r <- newIORef 0
+  return (\i -> do modifyIORef r (+i)
+                   readIORef r)
+
+doDitaa :: Counter -> Block -> IO Block
+doDitaa counter cb@(CodeBlock (id, classes, namevals) contents) =
     if elem "ditaa" classes
-        then withPreloadedFile contents $ \infile ->
-          let outfile = "image.png" in
-          system ("/usr/bin/ditaa " ++ infile ++ " " ++ outfile ++ " >/dev/null") >>
+        then withPreloadedFile contents $ \infile -> do
+          cval <- counter 1
+          let outfile = "image-" ++ show cval ++ ".png" in do
+          system ("/usr/bin/ditaa " ++ infile ++ " " ++ outfile ++ " >/dev/null")
           return (Para [Image [] (outfile, "")])
         else return cb
-doDitaa x = return x
+doDitaa c x = return x
 
 withPreloadedFile :: [Char] -> (FilePath -> IO a) -> IO a
 withPreloadedFile content action = withSystemTempFile filenameTemplate callback
   where filenameTemplate     = "ditaa.md"
         callback path handle = hPutStr handle content >> hClose handle >> action path
 
-main = toJsonFilter doDitaa
+main = do
+  counter <- makeCounter
+  toJsonFilter $ doDitaa counter
