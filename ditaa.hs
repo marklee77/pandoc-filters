@@ -8,12 +8,23 @@
 --    5 invoke ditaa
 import Text.Pandoc
 
+import System.IO
+import System.IO.Temp(withSystemTempFile)
+import System.Process
+
 doDitaa :: Block -> IO Block
 doDitaa cb@(CodeBlock (id, classes, namevals) contents) =
     if elem "ditaa" classes
 -- text, url, title
-        then return (Para [Image [] ("image-1.png", "")])
+        then withPreloadedFile contents $ \path -> 
+          system ("/usr/bin/ditaa " ++ path ++ " >/dev/null") >>
+          return (Para [Image [] ("image-1.png", "")])
         else return cb
 doDitaa x = return x
+
+withPreloadedFile :: [Char] -> (FilePath -> IO a) -> IO a
+withPreloadedFile content action = withSystemTempFile filenameTemplate callback
+  where filenameTemplate     = "ditaa.md"
+        callback path handle = hPutStr handle content >> hClose handle >> action path
 
 main = toJsonFilter doDitaa
