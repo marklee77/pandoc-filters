@@ -30,8 +30,8 @@ import System.Process
 doDitaa :: Block -> IO Block
 doDitaa cb@(CodeBlock (id, classes, namevals) contents) =
     if elem "ditaa" classes
--- text, url, title
-        then withPreloadedFile contents $ \infile -> 
+        then withPreloadedFile contents $ \infile ->
+          let outfile = "image.png" in
           system ("/usr/bin/ditaa " ++ infile ++ " " ++ outfile ++ " >/dev/null") >>
           return (Para [Image [] (outfile, "")])
         else return cb
