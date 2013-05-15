@@ -29,6 +29,7 @@ And this is an annotated code block:
     |       Lots of work      |
     +-------------------------+
 
+Caption: Test Caption
 ~~~~~
 
 Formats: Supports png with the ditaa command. Support for EPS and PDF requires

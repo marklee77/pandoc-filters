@@ -16,8 +16,9 @@
 -- ditaa-json.hs
 -- need to
 --    1 make sure ditaa is in path
---    5 title and caption info...
---    6 other opts
+--    2 title and caption info...
+--    3 other opts
+--
 
 import Data.IORef
 import Data.String.Utils
@@ -28,6 +29,7 @@ import System.IO
 import System.IO.Temp(withSystemTempFile)
 import System.Process
 import Text.Pandoc
+import Text.Pandoc.Builder
 
 
 type Counter = Int -> IO Int
@@ -55,7 +57,7 @@ getOutputFileName template counter = do
         (prefix, extension) = splitExtension template
 
 renderDiagrams :: String -> Counter -> Block -> IO Block
-renderDiagrams template counter (CodeBlock (id, "ditaa":opts, attrs) diagram) = 
+renderDiagrams template counter (CodeBlock (id, "ditaa":opts, attrs) contents) =
     withPreloadedFile diagram "ditaa.md" $ \infile -> do
         outfile <- getOutputFileName template counter
         case takeExtension template of 
@@ -73,7 +75,10 @@ renderDiagrams template counter (CodeBlock (id, "ditaa":opts, attrs) diagram) =
                                                     ">/dev/null"]
                                  system $ "epstopdf " ++ epsfile ++ " -o=" ++ outfile
                                where optstring = join " --" ([""] ++ opts)
-        return (Para [Image [] (outfile, "")])
+        return (Para [Image [Str caption] (outfile, "")])
+  where contentslist = split "Caption:" contents
+        diagram      = head contentslist
+        caption      = strip $ head $ tail $ contentslist ++ [""]
 renderDiagrams _ _ x = return x
 
 
