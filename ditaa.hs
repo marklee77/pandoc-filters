@@ -52,24 +52,38 @@ getOutputFileName :: FilePath -> Counter -> IO String
 getOutputFileName template counter = do
     createDirectoryIfMissing True directory
     cval <- counter 1
-    return (prefix ++ show cval ++ extension)
+    return (addExtension (prefix ++ show cval) extension)
   where directory = takeDirectory template
         (prefix, extension) = splitExtension template
 
+ditaaToPng :: FilePath -> FilePath -> [String]
+ditaaToPng infile outfile opts = do
+    system $ join " " ["ditaa", optstring, infile, outfile, ">/dev/null"]
+  where optstring = join " --" ([""] ++ opts)
 
 renderDiagrams :: String -> Counter -> Block -> IO Block
 renderDiagrams template counter (CodeBlock (id, "ditaa":opts, attrs) diagram) = 
     withPreloadedFile diagram "ditaa.md" $ \infile -> do
         outfile <- getOutputFileName template counter
-        system ("ditaa" ++ optionstr ++ " " ++ infile ++ " " ++ outfile ++ " >/dev/null")
+        case takeExtension template of 
+            ".png" -> do system $ join " " ["ditaa", join " --" ([""] ++ opts), 
+                                            infile, outfile, ">/dev/null"]
+            ".eps" -> do system $ join " " ["ditaaeps", 
+                                            join " --" ([""] ++ opts), 
+                                            infile, outfile, ">/dev/null"]
+            ".pdf" -> do withSystemTempFile "ditaa.eps" callback
+                       where callback epsfile handle = do
+                                 hClose handle
+                                 system $ join " " ["ditaaeps",
+                                                    join " --" ([""] ++ opts),
+                                                    infile, epsfile, ">/dev/null"]
+                                 system $ "epstopdf " ++ epsfile ++ " -o=" ++ outfile
         return (Para [Image [] (outfile, "")])
-      where optionstr = join " --" ([""] ++ opts)
 renderDiagrams _ _ x = return x
 
 
 main = do
     counter <- makeCounter
     args <- getArgs
--- TODO: add options for ditaa command / arguments
     let template = head $ args ++ ["image.png"] in
         toJsonFilter $ renderDiagrams template counter

@@ -1,3 +1,6 @@
+Pandoc Filters
+==============
+
 Some filters that do transformations on the pandoc JSON AST representation. 
 Mostly written using the 
 [pandoc scripting](http://johnmacfarlane.net/pandoc/scripting.html) library.
@@ -28,16 +31,3 @@ And this is an annotated code block:
 
 ~~~~~
 
-~~~~~ {.ditaa .no-separation}
-
-+--------+   +-------+    +-------+
-|        | --+ditaa2 +--> |       |
-|  Text  |   +-------+    |diagram|
-|Document|   |!magic!|    |       |
-|     {d}|   |       |    |       |
-+---+----+   +-------+    +-------+
-    :                         ^
-    |       Lots of work      |
-    +-------------------------+
-
-~~~~~
