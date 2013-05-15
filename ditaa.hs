@@ -59,10 +59,9 @@ getOutputFileName :: FilePath -> Counter -> IO String
 getOutputFileName template counter = do
     createDirectoryIfMissing True directory
     cval <- counter 1
-    return (directory ++ "/" ++ basename ++ show cval ++ extension)
+    return (prefix ++ show cval ++ extension)
   where directory = takeDirectory template
-        basename = takeBaseName template
-        extension = takeExtension template
+        (prefix, extension) = splitExtension template
 
 main = do
     counter <- makeCounter
