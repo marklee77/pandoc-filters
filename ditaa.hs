@@ -15,43 +15,51 @@
 --
 -- ditaa-json.hs
 -- need to
---    0 parse arguments (optional output dir) (optional format)
---    1 get tmp file
---    2 write data to tmp
---    3 create output dir if needed
---    4 figure output file name...first available ditaafig-N.(fmt)
---    5 invoke ditaa
+--    0 parse arguments (optional output prefix) (optional format)
+--    1 make sure ditaa is in path
+--    2 create output dir if needed
+--    3 add format support...
+--    4 add getting filename from namevals support
+--    5 title and caption info...
+--    6 other opts
 
 import Data.IORef
+import System.Environment
 import System.IO
 import System.IO.Temp(withSystemTempFile)
 import System.Process
 import Text.Pandoc
 
-type Counter = Int -> IO Int
 
-makeCounter :: IO Counter
-makeCounter = do
-  r <- newIORef 0
-  return (\i -> do modifyIORef r (+i)
-                   readIORef r)
-
-doDitaa :: Counter -> Block -> IO Block
-doDitaa counter cb@(CodeBlock (id, classes, namevals) contents) =
+doDitaa :: Counter -> String -> Block -> IO Block
+doDitaa counter prefix cb@(CodeBlock (id, classes, namevals) contents) =
     if elem "ditaa" classes
         then withPreloadedFile contents $ \infile -> do
-          cval <- counter 1
-          let outfile = "image-" ++ show cval ++ ".png" in do
-          system ("/usr/bin/ditaa " ++ infile ++ " " ++ outfile ++ " >/dev/null")
-          return (Para [Image [] (outfile, "")])
+            cval <- counter 1
+            let outfile = prefix ++ show cval ++ ".png" in do
+                system ("ditaa " ++ infile ++ " " ++ outfile ++ " >/dev/null")
+                return (Para [Image [] (outfile, "")])
         else return cb
-doDitaa c x = return x
+doDitaa _ _ x = return x
 
-withPreloadedFile :: [Char] -> (FilePath -> IO a) -> IO a
-withPreloadedFile content action = withSystemTempFile filenameTemplate callback
-  where filenameTemplate     = "ditaa.md"
-        callback path handle = hPutStr handle content >> hClose handle >> action path
+
+type Counter = Int -> IO Int
+makeCounter :: IO Counter
+makeCounter = do
+    r <- newIORef 0
+    return (\i -> modifyIORef r (+i) >> readIORef r)
+
+
+withPreloadedFile :: String -> (FilePath -> IO a) -> IO a
+withPreloadedFile content action = 
+    withSystemTempFile "ditaa.md" callback
+  where callback path handle = do
+            hPutStr handle content 
+            hClose handle 
+            action path
+
 
 main = do
   counter <- makeCounter
-  toJsonFilter $ doDitaa counter
+  argv <- getArgs
+  toJsonFilter $ doDitaa counter (argv !! 0)

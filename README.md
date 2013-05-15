@@ -8,7 +8,7 @@ graphics. Inspired by [mddia](https://github.com/nichtich/ditaa-markdown).
 
 This is a work in progress, but the intended usage is:
 
-    pandoc -t json input.md | runghc ditaa.hs <output_directory> <outfile_prefix> [format] | pandoc -f json ...
+    pandoc -t json input.md | runghc ditaa.hs <outfile_pattern> [format] | pandoc -f json ...
 
 And this is an annotated code block:
 
