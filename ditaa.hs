@@ -15,7 +15,7 @@
 --
 -- ditaa-json.hs
 -- need to
---    0 parse arguments (optional output prefix) (optional format)
+--    0 parse arguments (optional output template) (optional format)
 --    1 make sure ditaa is in path
 --    2 create output dir if needed
 --    3 add format support...
@@ -32,14 +32,12 @@ import Text.Pandoc
 
 
 doDitaa :: Counter -> String -> Block -> IO Block
-doDitaa counter prefix cb@(CodeBlock (id, classes, namevals) contents) =
-    if elem "ditaa" classes
-        then withPreloadedFile contents $ \infile -> do
-            cval <- counter 1
-            let outfile = prefix ++ show cval ++ ".png" in do
-                system ("ditaa " ++ infile ++ " " ++ outfile ++ " >/dev/null")
-                return (Para [Image [] (outfile, "")])
-        else return cb
+doDitaa counter template (CodeBlock (id, "ditaa":opts, attrs) diagram) = 
+    withPreloadedFile diagram $ \infile -> do
+        cval <- counter 1
+        let outfile = template ++ show cval ++ ".png" in do
+            system ("ditaa " ++ infile ++ " " ++ outfile ++ " >/dev/null")
+            return (Para [Image [] (outfile, "")])
 doDitaa _ _ x = return x
 
 
