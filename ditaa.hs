@@ -16,8 +16,6 @@
 -- ditaa-json.hs
 -- need to
 --    1 make sure ditaa is in path
---    3 add format support...
---    4 add getting filename from namevals support
 --    5 title and caption info...
 --    6 other opts
 
