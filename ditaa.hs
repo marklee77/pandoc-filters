@@ -22,6 +22,7 @@
 --    6 other opts
 
 import Data.IORef
+import Data.String.Utils
 import System.Directory
 import System.Environment
 import System.FilePath
@@ -29,15 +30,6 @@ import System.IO
 import System.IO.Temp(withSystemTempFile)
 import System.Process
 import Text.Pandoc
-
-
-renderDiagrams :: String -> Counter -> Block -> IO Block
-renderDiagrams template counter (CodeBlock (id, "ditaa":opts, attrs) diagram) = 
-    withPreloadedFile diagram "ditaa.md" $ \infile -> do
-        outfile <- getOutputFileName template counter
-        system ("ditaa " ++ infile ++ " " ++ outfile ++ " >/dev/null")
-        return (Para [Image [] (outfile, "")])
-renderDiagrams _ _ x = return x
 
 
 type Counter = Int -> IO Int
@@ -55,6 +47,7 @@ withPreloadedFile content template action =
             hClose handle 
             action path
 
+
 getOutputFileName :: FilePath -> Counter -> IO String
 getOutputFileName template counter = do
     createDirectoryIfMissing True directory
@@ -63,10 +56,20 @@ getOutputFileName template counter = do
   where directory = takeDirectory template
         (prefix, extension) = splitExtension template
 
+
+renderDiagrams :: String -> Counter -> Block -> IO Block
+renderDiagrams template counter (CodeBlock (id, "ditaa":opts, attrs) diagram) = 
+    withPreloadedFile diagram "ditaa.md" $ \infile -> do
+        outfile <- getOutputFileName template counter
+        system ("ditaa" ++ optionstr ++ " " ++ infile ++ " " ++ outfile ++ " >/dev/null")
+        return (Para [Image [] (outfile, "")])
+      where optionstr = join " --" ([""] ++ opts)
+renderDiagrams _ _ x = return x
+
+
 main = do
     counter <- makeCounter
     args <- getArgs
 -- TODO: add options for ditaa command / arguments
     let template = head $ args ++ ["image.png"] in
         toJsonFilter $ renderDiagrams template counter
-

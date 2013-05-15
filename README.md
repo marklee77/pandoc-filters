@@ -14,10 +14,24 @@ Where *template* is an optional parameter of the form *directory/prefix.format*
 
 And this is an annotated code block:
 
-~~~~~ {.ditaa .no-separation file="image-1.png"}
+~~~~~ {.ditaa .no-separation}
 
 +--------+   +-------+    +-------+
 |        | --+ ditaa +--> |       |
+|  Text  |   +-------+    |diagram|
+|Document|   |!magic!|    |       |
+|     {d}|   |       |    |       |
++---+----+   +-------+    +-------+
+    :                         ^
+    |       Lots of work      |
+    +-------------------------+
+
+~~~~~
+
+~~~~~ {.ditaa .no-separation}
+
++--------+   +-------+    +-------+
+|        | --+ditaa2 +--> |       |
 |  Text  |   +-------+    |diagram|
 |Document|   |!magic!|    |       |
 |     {d}|   |       |    |       |
