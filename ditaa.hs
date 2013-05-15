@@ -56,28 +56,25 @@ getOutputFileName template counter = do
   where directory = takeDirectory template
         (prefix, extension) = splitExtension template
 
-ditaaToPng :: FilePath -> FilePath -> [String]
-ditaaToPng infile outfile opts = do
-    system $ join " " ["ditaa", optstring, infile, outfile, ">/dev/null"]
-  where optstring = join " --" ([""] ++ opts)
-
 renderDiagrams :: String -> Counter -> Block -> IO Block
 renderDiagrams template counter (CodeBlock (id, "ditaa":opts, attrs) diagram) = 
     withPreloadedFile diagram "ditaa.md" $ \infile -> do
         outfile <- getOutputFileName template counter
         case takeExtension template of 
-            ".png" -> do system $ join " " ["ditaa", join " --" ([""] ++ opts), 
-                                            infile, outfile, ">/dev/null"]
-            ".eps" -> do system $ join " " ["ditaaeps", 
-                                            join " --" ([""] ++ opts), 
-                                            infile, outfile, ">/dev/null"]
+            ".png" -> do system $ join " " ["ditaa", optstring, infile, outfile,
+                                            ">/dev/null"]
+                       where optstring = join " --" ([""] ++ opts)
+            ".eps" -> do system $ join " " ["ditaaeps", optstring, infile, 
+                                            outfile, ">/dev/null"]
+                       where optstring = join " --" ([""] ++ opts)
             ".pdf" -> do withSystemTempFile "ditaa.eps" callback
                        where callback epsfile handle = do
                                  hClose handle
-                                 system $ join " " ["ditaaeps",
-                                                    join " --" ([""] ++ opts),
-                                                    infile, epsfile, ">/dev/null"]
+                                 system $ join " " ["ditaaeps", optstring, 
+                                                    infile, epsfile, 
+                                                    ">/dev/null"]
                                  system $ "epstopdf " ++ epsfile ++ " -o=" ++ outfile
+                               where optstring = join " --" ([""] ++ opts)
         return (Para [Image [] (outfile, "")])
 renderDiagrams _ _ x = return x
 
