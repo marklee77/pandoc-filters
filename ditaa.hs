@@ -14,11 +14,7 @@
 -- this program. If not, see <http://www.gnu.org/licenses/>.
 --
 -- ditaa-json.hs
--- need to
---    1 make sure ditaa is in path
---    2 title and caption info...
---    3 other opts
---
+-- need to --    make sure ditaa is in path
 
 import Data.IORef
 import Data.String.Utils
@@ -32,13 +28,6 @@ import Text.Pandoc
 import Text.Pandoc.Builder
 
 
-type Counter = Int -> IO Int
-makeCounter :: IO Counter
-makeCounter = do
-    r <- newIORef 0
-    return (\i -> modifyIORef r (+i) >> readIORef r)
-
-
 withPreloadedFile :: String -> String -> (FilePath -> IO a) -> IO a
 withPreloadedFile content template action = 
     withSystemTempFile template callback
@@ -48,15 +37,15 @@ withPreloadedFile content template action =
             action path
 
 
-getOutputFileName :: FilePath -> Counter -> IO String
+getOutputFileName :: FilePath -> IO Int -> IO String
 getOutputFileName template counter = do
     createDirectoryIfMissing True directory
-    cval <- counter 1
+    cval <- counter
     return (addExtension (prefix ++ show cval) extension)
   where directory = takeDirectory template
         (prefix, extension) = splitExtension template
 
-renderDiagrams :: String -> Counter -> Block -> IO Block
+renderDiagrams :: String -> IO Int -> Block -> IO Block
 renderDiagrams template counter (CodeBlock (id, "ditaa":opts, attrs) contents) =
     withPreloadedFile diagram "ditaa.md" $ \infile -> do
         outfile <- getOutputFileName template counter
@@ -73,7 +62,8 @@ renderDiagrams template counter (CodeBlock (id, "ditaa":opts, attrs) contents) =
                                  system $ join " " ["ditaaeps", optstring, 
                                                     infile, epsfile, 
                                                     ">/dev/null"]
-                                 system $ "epstopdf " ++ epsfile ++ " -o=" ++ outfile
+                                 system $ 
+                                     "epstopdf " ++ epsfile ++ " -o=" ++ outfile
                                where optstring = join " --" ([""] ++ opts)
         return (Para [Image [Str caption] (outfile, "")])
   where contentslist = split "Caption:" contents
@@ -83,7 +73,8 @@ renderDiagrams _ _ x = return x
 
 
 main = do
-    counter <- makeCounter
     args <- getArgs
-    let template = head $ args ++ ["image.png"] in
-        toJsonFilter $ renderDiagrams template counter
+    cref <- newIORef 0
+    let template = head $ args ++ ["image.png"]
+        counter  = modifyIORef cref (+1) >> readIORef cref
+    toJsonFilter $ renderDiagrams template counter
