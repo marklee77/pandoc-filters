@@ -45,6 +45,7 @@ getOutputFileName template counter = do
   where directory = takeDirectory template
         (prefix, extension) = splitExtension template
 
+
 renderDiagrams :: String -> IO Int -> Block -> IO Block
 renderDiagrams template counter (CodeBlock (id, "ditaa":opts, attrs) contents) =
     withPreloadedFile diagram "ditaa.md" $ \infile -> do
