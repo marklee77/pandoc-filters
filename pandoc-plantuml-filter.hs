@@ -16,6 +16,8 @@
 -- ditaa-json.hs
 -- need to --    make sure ditaa is in path
 
+import Data.ByteString.Lazy.UTF8 (fromString)
+import Data.Digest.Pure.SHA (sha1, showDigest)
 import Data.IORef
 import Data.String.Utils
 import System.Directory
@@ -36,18 +38,17 @@ withPreloadedFile content template action =
             action path
 
 
-getOutputFileName :: FilePath -> IO Int -> IO String
-getOutputFileName format counter = do
+getOutputFileName :: String -> String -> IO String
+getOutputFileName content format = do
     createDirectoryIfMissing True directory
-    cval <- counter
-    return $ combine directory (addExtension ("fig-" ++ show cval) format)
-  where directory = "figures"
+    return $ combine directory (addExtension (showDigest . sha1 .fromString $ content) format)
+  where directory = "plantuml-figures"
 
 
-renderDiagrams :: String -> IO Int -> Block -> IO Block
-renderDiagrams format counter (CodeBlock (id, "plantuml":opts, attrs) contents) =
+renderDiagrams :: String -> Block -> IO Block
+renderDiagrams format (CodeBlock (id, "plantuml":opts, attrs) contents) =
     withPreloadedFile diagram "plantuml.txt" $ \infile -> do
-        outfile <- getOutputFileName "svg" counter
+        outfile <- getOutputFileName diagram "svg"
         case format of 
             "html" -> do system $ join " " ["plantuml", "-pipe", "-tsvg", optstring, "<", infile, ">", outfile ]
                       where optstring = join " --" ([""] ++ opts)
@@ -55,12 +56,11 @@ renderDiagrams format counter (CodeBlock (id, "plantuml":opts, attrs) contents) 
   where contentslist = split "Caption:" contents
         diagram      = head contentslist
         caption      = strip $ head $ tail $ contentslist ++ [""]
-renderDiagrams _ _ x = return x
+renderDiagrams _ x = return x
 
 
 main = do
     args <- getArgs
     cref <- newIORef 0
     let format = head $ args ++ ["svg"]
-        counter = modifyIORef cref (+1) >> readIORef cref
-    toJSONFilter $ renderDiagrams format counter
+    toJSONFilter $ renderDiagrams format
