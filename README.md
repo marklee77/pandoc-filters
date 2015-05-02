@@ -37,3 +37,4 @@ DitaaEps, available from [ditaa-addons](http://ditaa-addons.sourceforge.net/),
 and a wrapper script or alias set up to run as "ditaaeps" (configurable commands
 is a possible future feature if anyone else ever uses this. Pdf support
 additionally requires epstopdf.
+

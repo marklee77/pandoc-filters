@@ -37,34 +37,20 @@ withPreloadedFile content template action =
 
 
 getOutputFileName :: FilePath -> IO Int -> IO String
-getOutputFileName template counter = do
+getOutputFileName format counter = do
     createDirectoryIfMissing True directory
     cval <- counter
-    return (addExtension (prefix ++ show cval) extension)
-  where directory = takeDirectory template
-        (prefix, extension) = splitExtension template
+    return $ combine directory (addExtension ("fig-" ++ show cval) format)
+  where directory = "figures"
 
 
 renderDiagrams :: String -> IO Int -> Block -> IO Block
-renderDiagrams template counter (CodeBlock (id, "ditaa":opts, attrs) contents) =
-    withPreloadedFile diagram "ditaa.md" $ \infile -> do
-        outfile <- getOutputFileName template counter
-        case takeExtension template of 
-            ".png" -> do system $ join " " ["ditaa", optstring, infile, outfile,
-                                            ">/dev/null"]
-                       where optstring = join " --" ([""] ++ opts)
-            ".eps" -> do system $ join " " ["ditaaeps", optstring, infile, 
-                                            outfile, ">/dev/null"]
-                       where optstring = join " --" ([""] ++ opts)
-            ".pdf" -> do withSystemTempFile "ditaa.eps" callback
-                       where callback epsfile handle = do
-                                 hClose handle
-                                 system $ join " " ["ditaaeps", optstring, 
-                                                    infile, epsfile, 
-                                                    ">/dev/null"]
-                                 system $ 
-                                     "epstopdf " ++ epsfile ++ " -o=" ++ outfile
-                               where optstring = join " --" ([""] ++ opts)
+renderDiagrams format counter (CodeBlock (id, "plantuml":opts, attrs) contents) =
+    withPreloadedFile diagram "plantuml.txt" $ \infile -> do
+        outfile <- getOutputFileName "svg" counter
+        case format of 
+            "html" -> do system $ join " " ["plantuml", "-pipe", "-tsvg", optstring, "<", infile, ">", outfile ]
+                      where optstring = join " --" ([""] ++ opts)
         return (Para [Image [Str caption] (outfile, "")])
   where contentslist = split "Caption:" contents
         diagram      = head contentslist
@@ -75,6 +61,6 @@ renderDiagrams _ _ x = return x
 main = do
     args <- getArgs
     cref <- newIORef 0
-    let template = head $ args ++ ["image.png"]
-        counter  = modifyIORef cref (+1) >> readIORef cref
-    toJSONFilter $ renderDiagrams template counter
+    let format = head $ args ++ ["svg"]
+        counter = modifyIORef cref (+1) >> readIORef cref
+    toJSONFilter $ renderDiagrams format counter
