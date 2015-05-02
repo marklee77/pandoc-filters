@@ -1,0 +1,11 @@
+docformat   diaformat
+plain       txt
+html*       svg
+slidy       svg
+slideous    svg
+dzslides    svg
+revealjs    svg
+s5          svg
+latex       pdf ...via eps
+beamer      pdf
+pdf         pdf

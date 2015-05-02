@@ -21,46 +21,48 @@ import Data.Digest.Pure.SHA (sha1, showDigest)
 import Data.IORef
 import Data.String.Utils
 import System.Directory
-import System.Environment
+import System.Environment (getEnv)
 import System.FilePath
 import System.IO
-import System.IO.Temp(withSystemTempFile)
+import System.IO.Error (catchIOError)
+import System.IO.Temp (withSystemTempFile)
 import System.Process
 import Text.Pandoc.JSON
 
 
-withPreloadedFile :: String -> String -> (FilePath -> IO a) -> IO a
-withPreloadedFile content template action = 
-    withSystemTempFile template callback
+withPreloadedFile :: String -> (FilePath -> IO a) -> IO a
+withPreloadedFile content action = 
+    withSystemTempFile "plantuml.txt" callback
   where callback path handle = do
             hPutStr handle content 
             hClose handle 
             action path
 
 
-getOutputFileName :: String -> String -> IO String
-getOutputFileName content format = do
-    createDirectoryIfMissing True directory
-    return $ combine directory (addExtension (showDigest . sha1 .fromString $ content) format)
-  where directory = "plantuml-figures"
+getOutputFileName :: String -> String -> String -> IO String
+getOutputFileName subdir content format = do
+    createDirectoryIfMissing True subdir
+    return $ combine subdir (addExtension (showDigest . sha1 .fromString $ content) format)
 
 
-renderDiagrams :: String -> Block -> IO Block
-renderDiagrams format (CodeBlock (id, "plantuml":opts, attrs) contents) =
-    withPreloadedFile diagram "plantuml.txt" $ \infile -> do
-        outfile <- getOutputFileName diagram "svg"
+renderDiagrams :: String-> String -> Block -> IO Block
+renderDiagrams subdir format (CodeBlock (id, "plantuml":opts, attrs) contents) =
+    withPreloadedFile content $ \infile -> do
+        outfile <- getOutputFileName subdir content "svg"
         case format of 
             "html" -> do system $ join " " ["plantuml", "-pipe", "-tsvg", optstring, "<", infile, ">", outfile ]
                       where optstring = join " --" ([""] ++ opts)
         return (Para [Image [Str caption] (outfile, "")])
   where contentslist = split "Caption:" contents
-        diagram      = head contentslist
+        content      = head contentslist
         caption      = strip $ head $ tail $ contentslist ++ [""]
-renderDiagrams _ x = return x
+renderDiagrams _ _ x = return x
 
 
 main = do
     args <- getArgs
-    cref <- newIORef 0
-    let format = head $ args ++ ["svg"]
-    toJSONFilter $ renderDiagrams format
+    subdirenv <- getEnv "PANDOC_PLANTUML_SUBDIR"
+    let subdir = head $ [subdirenv] ++ ["plantuml-figures"]
+        format = head $ args ++ ["svg"]
+    putStrLn subdir
+    toJSONFilter $ renderDiagrams subdir format
