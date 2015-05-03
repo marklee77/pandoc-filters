@@ -17,12 +17,17 @@
 
 import Data.ByteString.Lazy.UTF8 (fromString)
 import Data.Digest.Pure.SHA (sha1, showDigest)
+import Data.String.Utils (join, split, strip)
+import System.Directory (createDirectoryIfMissing)
 import System.Environment (getArgs, getEnv)
 import System.FilePath (addExtension, combine)
 import System.IO (hClose, hPutStr)
 import System.IO.Error (catchIOError)
 import System.IO.Temp (withSystemTempFile)
-import Text.Pandoc.JSON (toJSONFilter)
+import System.Process (system)
+import Text.Pandoc.JSON (Block, Block(CodeBlock, Para), Inline(Image, Str), 
+                         toJSONFilter)
+
 
 withPreloadedFile :: String -> (FilePath -> IO a) -> IO a
 withPreloadedFile content action =
@@ -32,19 +37,48 @@ withPreloadedFile content action =
         hClose handle
         action path
 
-getOutputFileName :: String -> String -> String -> IO String
-getOutputFileName dir content ext = 
-    return $ combine dir (addExtension 
-                             (showDigest . sha1 . fromString $ content) ext)
 
-renderDiagram
+uniqueFilePrefix :: String -> String
+uniqueFilePrefix = showDigest . sha1 . fromString
 
-renderDiagrams?
+
+renderFigure :: String -> String-> String -> String -> IO String
+renderFigure infile figformat figdir prefix = do
+    createDirectoryIfMissing True figdir
+    let outfile = combine figdir $ addExtension prefix figformat
+    system $ join " " ["plantuml", "-pipe", join "" ["-t", figformat], 
+                       "<", infile, ">", outfile] 
+    return outfile
+
+
+processDocument :: String -> String -> Block -> IO Block
+processDocument figdir docformat (CodeBlock (id, "plantuml":opts, attrs) contents) =
+    withPreloadedFile content $ \infile -> do
+        figformat <- case docformat of
+            "plain"    -> return "txt"
+            "html"     -> return "svg"
+            "html5"    -> return "svg"
+            "slidy"    -> return "svg"
+            "slideous" -> return "svg"
+            "dzslides" -> return "svg"
+            "revealjs" -> return "svg"
+            "latex"    -> return "pdf"
+            "beamer"   -> return "pdf"
+            "pdf"      -> return "pdf"
+            _          -> return ""
+        outfile <- renderFigure infile figformat figdir prefix
+        return (Para [Image [Str caption] (outfile, "")])
+  where contentslist = split "Caption:" contents
+        content      = head contentslist
+        caption      = strip $ head $ tail $ contentslist ++ [""]
+        prefix       = uniqueFilePrefix content
+processDocument _ _ x = return x
+
 
 main :: IO ()
 main = do
     args <- getArgs
     figdir <- getEnv "PANDOC_PLANTUML_FIGDIR" 
                 `catchIOError` \e -> return "plantuml-figures"
-    let format = head $ args ++ ["svg"]
-    toJSONFilter $ renderFigures subdir format
+    let docformat = head $ args ++ ["html"]
+    toJSONFilter $ processDocument figdir docformat
