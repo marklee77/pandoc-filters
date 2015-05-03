@@ -50,7 +50,6 @@ renderFigure infile figfmt figdir prefix = do
         then do
             epsfile <- renderFigure infile "eps" figdir prefix
             system $ join " " ["epspdf", epsfile, outfile]
-            system $ join " " ["rm", "-f", epsfile]
         else
             system $ join " " ["plantuml", "-pipe", join "" ["-t", figfmt], 
                                "<", infile, ">", outfile] 
