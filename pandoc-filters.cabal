@@ -15,7 +15,7 @@ build-type:          Simple
 extra-source-files:  README.md
 cabal-version:       >=1.10
 
-executable pandoc-filters
+executable pandoc-plantuml-filter
   main-is:             pandoc-plantuml-filter.hs
   -- other-modules:       
   -- other-extensions:    
