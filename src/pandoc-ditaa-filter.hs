@@ -1,4 +1,5 @@
--- ditaa.hs, a pandoc json filter to create inline diagrams with ditaa
+-- pandoc-ditaa-filter.hs, a pandoc json filter to create inline diagrams with 
+-- ditaa
 -- Copyright (C) 2013 Mark Lee Stillwell
 --
 -- This program is free software: you can redistribute it and/or modify it under
@@ -13,8 +14,6 @@
 -- You should have received a copy of the GNU General Public License along with
 -- this program. If not, see <http://www.gnu.org/licenses/>.
 --
--- ditaa-json.hs
--- need to --    make sure ditaa is in path
 
 import Data.IORef
 import Data.String.Utils
