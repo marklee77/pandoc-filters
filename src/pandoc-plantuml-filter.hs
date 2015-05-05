@@ -56,8 +56,8 @@ renderFigure infile figfmt figdir prefix = do
     return outfile
 
 
-processDocument :: String -> String -> Block -> IO Block
-processDocument figdir docfmt (CodeBlock (id, "plantuml":opts, attrs) contents) =
+processBlock :: String -> String -> Block -> IO Block
+processBlock figdir docfmt (CodeBlock (id, "plantuml":opts, attrs) contents) =
     withPreloadedFile content $ \infile -> do
         figfmt <- case docfmt of
             "plain"    -> return "txt"
@@ -80,7 +80,7 @@ processDocument figdir docfmt (CodeBlock (id, "plantuml":opts, attrs) contents) 
         content      = head contentslist
         caption      = strip $ head $ tail $ contentslist ++ [""]
         prefix       = uniqueFilePrefix content
-processDocument _ _ x = return x
+processBlock _ _ x = return x
 
 
 main :: IO ()
@@ -89,4 +89,4 @@ main = do
     figdir <- getEnv "PANDOC_PLANTUML_FIGDIR" 
                 `catchIOError` \e -> return "plantuml-figures"
     let docfmt = head $ args ++ ["html"]
-    toJSONFilter $ processDocument figdir docfmt
+    toJSONFilter $ processBlock figdir docfmt
