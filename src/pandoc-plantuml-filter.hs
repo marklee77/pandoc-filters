@@ -38,17 +38,16 @@ withPreloadedFile content action =
             action path
 
 
-uniqueFilePrefix :: String -> String
 uniqueFilePrefix = showDigest . sha1 . fromString
 
 
-renderFigure :: String -> String-> String -> String -> IO String
-renderFigure infile figfmt figdir prefix = do
+renderPlantUML :: String -> String-> String -> String -> IO String
+renderPlantUML infile figfmt figdir prefix = do
     createDirectoryIfMissing True figdir
     let outfile = combine figdir $ addExtension prefix figfmt
     if figfmt == "pdf"
         then do
-            epsfile <- renderFigure infile "eps" figdir prefix
+            epsfile <- renderPlantUML infile "eps" figdir prefix
             system $ join " " ["epspdf", epsfile, outfile]
         else
             system $ join " " ["plantuml", "-pipe", join "" ["-t", figfmt], 
@@ -73,7 +72,7 @@ processBlock figdir docfmt (CodeBlock (id, "plantuml":opts, attrs) contents) =
             _          -> return ""
         if length(figfmt) > 0
             then do
-                outfile <- renderFigure infile figfmt figdir prefix
+                outfile <- renderPlantUML infile figfmt figdir prefix
                 return (Para [Image [Str caption] (outfile, "")])
             else return (CodeBlock (id, "plantuml":opts, attrs) contents)
   where contentslist = split "Caption:" contents
