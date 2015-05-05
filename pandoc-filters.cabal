@@ -29,4 +29,4 @@ executable pandoc-plantuml-filter
                        , temporary
                        , utf8-string
   hs-source-dirs:      src
-  default-language:    Haskell98
+  default-language:    Haskell2010

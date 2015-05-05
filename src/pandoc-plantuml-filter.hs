@@ -32,10 +32,10 @@ import Text.Pandoc.JSON (Block, Block(CodeBlock, Para), Inline(Image, Str),
 withPreloadedFile :: String -> (FilePath -> IO a) -> IO a
 withPreloadedFile content action =
     withSystemTempFile "plantuml.txt" callback
-  where callback path handle = do
-        hPutStr handle content
-        hClose handle
-        action path
+  where callback path handle = do 
+            hPutStr handle content
+            hClose handle
+            action path
 
 
 uniqueFilePrefix :: String -> String
